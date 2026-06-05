@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0f0f;--surface:#171717;--surface2:#1e1e1e;--surface3:#252525;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8e6e0;--text2:#8a8880;--text3:#555450;
+  --accent:#c8f060;--accent2:#a8d040;--accent-dim:rgba(200,240,96,0.1);--accent-dim2:rgba(200,240,96,0.06);
+  --amber:#f0b860;--amber-dim:rgba(240,184,96,0.1);
+  --blue:#60a8f0;--blue-dim:rgba(96,168,240,0.1);
+  --pink:#f060a8;--red:#f06060;--red-dim:rgba(240,96,96,0.1);
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+/* Sidebar */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.logo-mark{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.logo-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.nav-section{padding:0 12px;margin-bottom:6px}
+.nav-label{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-dim);color:var(--accent)}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-count{margin-left:auto;font-size:10px;font-family:'DM Mono',monospace;background:var(--surface3);color:var(--text3);padding:1px 6px;border-radius:20px}
+.nav-item.active .nav-count{background:var(--accent-dim2);color:var(--accent)}
+.sidebar-footer{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--border)}
+.sheets-status{font-size:11px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:6px;color:var(--text3)}
+.sheets-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.sheets-dot.connected{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+
+/* Main */
+.main{display:flex;flex-direction:column;min-height:100vh}
+.topbar{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--bg);position:sticky;top:0;z-index:10}
+.page-title{font-size:15px;font-weight:500;color:var(--text);flex:1}
+.btn{height:32px;padding:0 14px;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-accent{background:var(--accent);border:none;color:#0f0f0f;font-weight:500}
+.btn-accent:hover{background:var(--accent2)}
+.btn svg{width:13px;height:13px}
+.content{padding:24px 28px;flex:1}
+
+/* Voice log — hero element */
+.voice-log{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:border-color .2s}
+.voice-log:focus-within{border-color:var(--border2)}
+.voice-log.recording{border-color:rgba(240,96,96,0.4);background:rgba(240,96,96,0.03)}
+.voice-top{display:flex;gap:12px;align-items:flex-start}
+.voice-text-area{flex:1}
+.transcript-display{min-height:44px;font-size:14px;color:var(--text);line-height:1.6;cursor:text;word-break:break-word}
+.transcript-display.empty{color:var(--text3)}
+.transcript-display.interim{color:var(--text2)}
+.voice-controls{display:flex;flex-direction:column;gap:8px;align-items:center;flex-shrink:0}
+
+/* Mic button */
+.mic-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative;flex-shrink:0}
+.mic-btn:hover{background:var(--surface3);border-color:var(--border2)}
+.mic-btn.recording{background:var(--red-dim);border-color:rgba(240,96,96,0.4)}
+.mic-btn.recording::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(240,96,96,0.3);animation:ripple 1.2s ease-out infinite}
+.mic-btn.recording::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid rgba(240,96,96,0.15);animation:ripple 1.2s ease-out infinite .4s}
+@keyframes ripple{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4)}}
+.mic-btn svg{width:18px;height:18px;color:var(--text2);transition:color .2s}
+.mic-btn.recording svg{color:var(--red)}
+.mic-hint{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);text-align:center;line-height:1.4}
+.mic-hint.recording{color:rgba(240,96,96,0.7)}
+
+.voice-meta{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap}
+.meta-input{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;height:28px}
+.meta-input:focus{border-color:var(--border2)}
+.meta-select{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;height:28px;cursor:pointer}
+.planned-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer;margin-left:auto;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);height:28px;user-select:none;transition:all .15s}
+.planned-toggle.unplanned{border-color:rgba(240,184,96,0.3);color:var(--amber);background:var(--amber-dim)}
+.toggle-dot{width:5px;height:5px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.planned-toggle.unplanned .toggle-dot{background:var(--amber)}
+.voice-actions{display:flex;gap:8px;margin-top:12px;align-items:center}
+.log-btn{height:34px;padding:0 18px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;background:var(--accent);border:none;color:#0f0f0f}
+.log-btn:hover{background:var(--accent2)}
+.log-btn:disabled{opacity:.4;pointer-events:none}
+.clear-btn{height:34px;padding:0 12px;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;background:transparent;border:1px solid var(--border);color:var(--text3);transition:all .15s}
+.clear-btn:hover{background:var(--surface2);color:var(--text2)}
+.char-count{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-left:auto}
+.no-speech-note{font-size:11px;color:var(--amber);font-family:'DM Mono',monospace;display:none}
+
+/* Type edit — editable transcript */
+.transcript-input{width:100%;background:transparent;border:none;outline:none;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);line-height:1.6;resize:none;min-height:44px}
+.transcript-input::placeholder{color:var(--text3)}
+
+/* Filters */
+.filters-bar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.filter-chip{height:28px;padding:0 12px;border-radius:20px;font-size:11px;font-family:'DM Mono',monospace;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.filter-chip:hover{border-color:var(--border2);color:var(--text)}
+.filter-chip.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.results-count{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-left:auto}
+
+/* Entries */
+.entries{display:flex;flex-direction:column;gap:10px}
+.entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:border-color .15s}
+.entry:hover{border-color:var(--border2)}
+.entry.loading{opacity:.6;pointer-events:none}
+.entry-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.entry-badges{display:flex;gap:6px;flex-wrap:wrap;flex:1;align-items:center}
+.badge{font-size:10px;padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace;white-space:nowrap}
+.badge-company{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
+.badge-unplanned{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,184,96,0.2)}
+.badge-planned{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.badge-stakeholder{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,168,240,0.2)}
+.badge-voice{background:rgba(240,96,96,0.08);color:rgba(240,96,96,0.7);border:1px solid rgba(240,96,96,0.15)}
+.entry-date{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);white-space:nowrap;margin-top:3px}
+.entry-what{font-size:14px;font-weight:500;color:var(--text);margin-bottom:8px;line-height:1.45}
+.entry-generated{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.gen-block{background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;border:1px solid var(--border)}
+.gen-block.full{grid-column:1/-1}
+.gen-label{font-size:9px;font-family:'DM Mono',monospace;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.gen-label.accent{color:var(--accent)}
+.gen-label.amber{color:var(--amber)}
+.gen-label.blue{color:var(--blue)}
+.gen-text{font-size:12px;color:var(--text2);line-height:1.55}
+.gen-text.highlight{color:var(--text)}
+.comp-tag{font-size:10px;padding:2px 8px;border-radius:20px;font-family:'DM Mono',monospace;display:inline-block;margin:2px 2px 0 0}
+.tag-collab{background:rgba(29,158,117,0.12);color:#5DCAA5;border:1px solid rgba(29,158,117,0.2)}
+.tag-comms{background:rgba(96,168,240,0.12);color:var(--blue);border:1px solid rgba(96,168,240,0.2)}
+.tag-impact{background:rgba(240,184,96,0.12);color:var(--amber);border:1px solid rgba(240,184,96,0.2)}
+.tag-craft{background:rgba(200,240,96,0.12);color:var(--accent);border:1px solid rgba(200,240,96,0.2)}
+.tag-mastery{background:rgba(240,96,168,0.12);color:var(--pink);border:1px solid rgba(240,96,168,0.2)}
+.tag-strategy{background:rgba(96,168,240,0.1);color:#a0c8f0;border:1px solid rgba(96,168,240,0.15)}
+.entry-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:3px 6px;border-radius:4px;transition:all .15s;font-family:'DM Mono',monospace}
+.del-btn:hover{color:var(--red);background:var(--red-dim)}
+.generating-bar{height:2px;background:var(--surface3);border-radius:2px;overflow:hidden;margin:8px 0}
+.generating-progress{height:100%;background:var(--accent);border-radius:2px;animation:prog 1.5s ease-in-out infinite}
+@keyframes prog{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+
+/* Panels */
+.panel{display:none}
+.panel.active{display:block}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.stat-num{font-size:28px;font-weight:300;font-family:'DM Mono',monospace;color:var(--text);line-height:1;margin-bottom:4px}
+.stat-num.accent{color:var(--accent)}
+.stat-label{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.coverage-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.coverage-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.coverage-name{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px}
+.coverage-bar-wrap{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.coverage-bar{height:100%;border-radius:2px;transition:width .4s ease}
+.coverage-count{font-size:10px;font-family:'DM Mono',monospace;color:var(--text3)}
+.gap-warning{background:var(--amber-dim);border:1px solid rgba(240,184,96,0.2);border-radius:var(--radius);padding:12px 16px;font-size:12px;color:var(--amber);display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+
+/* Settings */
+.settings-section{max-width:520px}
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px}
+.settings-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
+.settings-desc{font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5}
+.settings-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text);outline:none;margin-bottom:8px}
+.settings-input:focus{border-color:var(--border2)}
+.script-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);white-space:pre-wrap;overflow-x:auto;line-height:1.6;margin-bottom:8px;max-height:200px;overflow-y:auto}
+.settings-row{display:flex;gap:8px}
+.settings-select{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;height:34px}
+
+.empty{text-align:center;padding:60px 20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:12px;line-height:2}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+/* Notification */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);display:flex;align-items:center;gap:8px;transform:translateY(80px);opacity:0;transition:all .3s ease;z-index:100;max-width:280px}
+.notif.show{transform:translateY(0);opacity:1}
+.notif-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.notif-dot.green{background:var(--accent)}
+.notif-dot.amber{background:var(--amber)}
+.notif-dot.red{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Career Tracker</div>
+    <div class="logo-sub">by Rama · v2.0</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Views</div>
+    <button class="nav-item active" onclick="showPanel('log',this)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><line x1="5" y1="5.5" x2="11" y2="5.5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="10.5" x2="8" y2="10.5"/></svg>
+      Work log <span class="nav-count" id="nav-all">0</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('unplanned',this)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l1.5 3 3.5.5-2.5 2.5.6 3.5L8 10l-3.1 1.5.6-3.5L3 5.5l3.5-.5z"/></svg>
+      Unplanned wins <span class="nav-count" id="nav-unplanned">0</span>
+    </button>
+    <button class="nav-item" onclick="showPanel('coverage',this)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12L5 8l3 2 3-5 3 2"/></svg>
+      Coverage
+    </button>
+  </div>
+  <div class="nav-section" style="margin-top:12px">
+    <div class="nav-label">Export</div>
+    <button class="nav-item" onclick="exportCSV()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 12h10"/></svg>
+      Export CSV
+    </button>
+    <button class="nav-item" onclick="copyReviewDoc()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="9" height="11" rx="1.5"/><path d="M3 3v10M6 7h4M6 9.5h4M6 12h2"/></svg>
+      Copy review doc
+    </button>
+  </div>
+  <div class="nav-section" style="margin-top:12px">
+    <div class="nav-label">Config</div>
+    <button class="nav-item" onclick="showPanel('settings',this)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>
+      Settings
+    </button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="sheets-status">
+      <div class="sheets-dot" id="sheets-dot"></div>
+      <span id="sheets-status-text">Sheets: not connected</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="page-title" id="page-title">Work log</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" onclick="loadFromSheets()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 0 1 3 11.2M2.5 8A5.5 5.5 0 0 1 13 4.8M2 11.5l1 1.5 1.5-1M14 4.5l-1-1.5-1.5 1"/></svg>
+        Sync
+      </button>
+    </div>
+  </div>
+
+  <!-- LOG PANEL -->
+  <div class="content panel active" id="panel-log">
+
+    <!-- Voice / text log box -->
+    <div class="voice-log" id="voice-log-box">
+      <div class="voice-top">
+        <div class="voice-text-area">
+          <textarea class="transcript-input" id="transcript-input" rows="2"
+            placeholder="Speak using the mic, or type here — describe what just happened in your own words…"
+            oninput="onTranscriptInput()"></textarea>
+        </div>
+        <div class="voice-controls">
+          <button class="mic-btn" id="mic-btn" onclick="toggleRecording()" title="Hold to record, click to toggle">
+            <svg id="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="9" y="2" width="6" height="12" rx="3"/>
+              <path d="M5 10a7 7 0 0 0 14 0M12 19v3M9 22h6"/>
+            </svg>
+          </button>
+          <div class="mic-hint" id="mic-hint">tap to<br>record</div>
+        </div>
+      </div>
+      <div class="no-speech-note" id="no-speech-note">⚠ Speech API not supported in this browser. Use Chrome or Edge, or just type above.</div>
+      <div class="voice-meta">
+        <input class="meta-input" id="q-company" placeholder="Company · Team · Project" style="min-width:190px">
+        <input class="meta-input" id="q-date" type="date" style="width:130px">
+        <select class="meta-select" id="q-stakeholder" style="width:115px">
+          <option value="">Stakeholder</option>
+          <option>Peer</option><option>Lead</option><option>Director</option><option>C-level</option><option>External</option>
+        </select>
+        <div class="planned-toggle" id="planned-toggle" onclick="togglePlanned()">
+          <div class="toggle-dot"></div>
+          <span id="planned-text">Planned</span>
+        </div>
+      </div>
+      <div class="voice-actions">
+        <button class="log-btn" id="log-btn" onclick="submitEntry()" disabled>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l.8 2.5 2.7.3-2 1.8.6 2.7L8 8l-2.1 1.3.6-2.7-2-1.8 2.7-.3z"/></svg>
+          Generate & log
+        </button>
+        <button class="clear-btn" onclick="clearEntry()">clear</button>
+        <span class="char-count" id="char-count">0 chars</span>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-chip" onclick="setFilter('Collaboration',this)">Collaboration</button>
+      <button class="filter-chip" onclick="setFilter('Communication',this)">Communication</button>
+      <button class="filter-chip" onclick="setFilter('Impact',this)">Impact</button>
+      <button class="filter-chip" onclick="setFilter('Visual Craftsmanship',this)">Craftsmanship</button>
+      <button class="filter-chip" onclick="setFilter('Craft Mastery & Innovation',this)">Mastery</button>
+      <button class="filter-chip" onclick="setFilter('Strategic Execution',this)">Strategy</button>
+      <span class="results-count" id="results-count"></span>
+    </div>
+
+    <div class="entries" id="entries-list">
+      <div class="empty">no entries yet<br>speak or type something above</div>
+    </div>
+  </div>
+
+  <!-- UNPLANNED PANEL -->
+  <div class="content panel" id="panel-unplanned">
+    <p style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:16px">Work that came your way without being on your OKR. Filter this before any review.</p>
+    <div class="entries" id="unplanned-list"></div>
+  </div>
+
+  <!-- COVERAGE PANEL -->
+  <div class="content panel" id="panel-coverage">
+    <div class="stats-grid" id="stats-grid"></div>
+    <p style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:12px;letter-spacing:.04em">COMPETENCY COVERAGE</p>
+    <div class="coverage-grid" id="coverage-grid"></div>
+    <div id="gap-warnings"></div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="content panel" id="panel-settings">
+    <div class="settings-section">
+      <div class="settings-card">
+        <div class="settings-title">Google Sheets connection</div>
+        <div class="settings-desc">Paste your Apps Script deployment URL. Every entry syncs automatically.</div>
+        <input class="settings-input" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec">
+        <div class="settings-row">
+          <button class="btn btn-accent" onclick="connectSheets()" style="height:34px;font-size:12px">Connect</button>
+          <button class="btn btn-ghost" onclick="testSheets()" style="height:34px;font-size:12px">Test</button>
+        </div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-title">Apps Script to paste</div>
+        <div class="settings-desc">In your Google Sheet → Extensions → Apps Script → paste → Deploy as web app (execute as you, access: anyone).</div>
+        <div class="script-block" id="script-display"></div>
+        <button class="btn btn-ghost" onclick="copyScript()" style="height:32px;font-size:11px">Copy script</button>
+      </div>
+      <div class="settings-card">
+        <div class="settings-title">Career level target</div>
+        <div class="settings-desc">The AI tailors the Career signal column to this level.</div>
+        <select class="settings-select" id="career-level" onchange="saveSettings()">
+          <option value="Senior Motion Designer">Senior Motion Designer (current target)</option>
+          <option value="Lead Motion Designer">Lead Motion Designer</option>
+          <option value="Creative Director">Creative Director</option>
+          <option value="Head of Motion">Head of Motion</option>
+        </select>
+      </div>
+      <div class="settings-card">
+        <div class="settings-title">Competency framework</div>
+        <div class="settings-desc">Currently loaded: Yazio Senior Motion Graphic Designer (6 competencies).</div>
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;line-height:2">
+          Collaboration · Communication · Impact<br>Visual Craftsmanship · Craft Mastery & Innovation · Strategic Execution
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<div class="notif" id="notif">
+  <div class="notif-dot green" id="notif-dot"></div>
+  <span id="notif-text"></span>
+</div>
+
+<script>
+const APPS_SCRIPT = `function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Career Tracker") || ss.insertSheet("Career Tracker");
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Date","Company/Team/Project","Planned?","Stakeholder","What happened (raw)","Competency area","Specific behaviour matched","Outcome","Review-ready summary","Career signal"]);
+    var h = sheet.getRange(1,1,1,10);
+    h.setFontWeight("bold").setBackground("#1a1a1a").setFontColor("#c8f060");
+    sheet.setFrozenRows(1);
+    [90,180,60,100,280,140,240,160,280,280].forEach(function(w,i){sheet.setColumnWidth(i+1,w)});
+  }
+  var d = JSON.parse(e.postData.contents);
+  sheet.appendRow([d.date,d.company,d.planned,d.stakeholder,d.what,d.competency,d.behaviour,d.outcome,d.summary,d.signal]);
+  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+}
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Career Tracker");
+  if (!sheet || sheet.getLastRow() < 2) return ContentService.createTextOutput(JSON.stringify({rows:[]})).setMimeType(ContentService.MimeType.JSON);
+  var data = sheet.getRange(2,1,sheet.getLastRow()-1,10).getValues();
+  var rows = data.map(function(r){return{date:r[0],company:r[1],planned:r[2],stakeholder:r[3],what:r[4],competency:r[5],behaviour:r[6],outcome:r[7],summary:r[8],signal:r[9]};});
+  return ContentService.createTextOutput(JSON.stringify({rows:rows})).setMimeType(ContentService.MimeType.JSON);
+}`;
+
+document.getElementById('script-display').textContent = APPS_SCRIPT;
+
+const YAZIO = {
+  competencies: [
+    { name:"Collaboration", tag:"tag-collab", behaviours:["Lead alignment across multiple teams to support shared outcomes","Proactively resolve tensions before they escalate","Maintain strong working relationships beyond immediate projects","Guide teams through difficult conversations with objectivity","Coach peers or junior colleagues through collaboration challenges"] },
+    { name:"Communication", tag:"tag-comms", behaviours:["Communicate complex topics clearly across diverse stakeholders","Spot and address clarity gaps in discussions","Facilitate sessions (e.g. retros, workshops) that drive alignment","Coach peers or juniors on improving communication","Give actionable feedback that improves outcomes"] },
+    { name:"Impact", tag:"tag-impact", behaviours:["Define success criteria for projects or initiatives","Lead work end-to-end, from scoping to learning","Anticipate downstream effects and course-correct proactively","Align work with team KPIs or business outcomes","Act without waiting for reminders or permission loops"] },
+    { name:"Visual Craftsmanship", tag:"tag-craft", behaviours:["Tackle complex creative problems with minimal guidance","Enhance existing processes through expertise","Develop innovative visual concepts and prototypes","Provide creative solutions in brainstorming sessions that improve user interaction"] },
+    { name:"Craft Mastery & Innovation", tag:"tag-mastery", behaviours:["Apply deep expertise to solve complex creative challenges","Actively enhance processes through experience","Contribute innovatively to brainstorming sessions","Explore AI and automation to improve workflows"] },
+    { name:"Strategic Execution", tag:"tag-strategy", behaviours:["Make impactful decisions that optimise solutions for strategic goals","Consistently create scroll-stopping and attention-grabbing content","Align work with platform best practices and audience-centric design","Demonstrate performance and impact focus across deliverables"] }
+  ]
+};
+
+let entries = [];
+let activeFilter = 'all';
+let isPlanned = true;
+let sheetsUrl = '';
+let careerLevel = 'Senior Motion Designer';
+
+// ─── SPEECH ───────────────────────────────────────────────
+let recognition = null;
+let isRecording = false;
+let interimTranscript = '';
+let finalTranscript = '';
+
+function initSpeech() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('no-speech-note').style.display = 'block';
+    document.getElementById('mic-btn').style.opacity = '0.3';
+    document.getElementById('mic-btn').style.pointerEvents = 'none';
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = function(e) {
+    interimTranscript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += t + ' ';
+      else interimTranscript += t;
+    }
+    const input = document.getElementById('transcript-input');
+    input.value = finalTranscript + interimTranscript;
+    onTranscriptInput();
+  };
+
+  recognition.onerror = function(e) {
+    if (e.error === 'not-allowed') {
+      notify('Microphone access denied — check browser permissions', 'amber');
+    } else if (e.error !== 'no-speech') {
+      notify('Speech error: ' + e.error, 'amber');
+    }
+    stopRecording();
+  };
+
+  recognition.onend = function() {
+    if (isRecording) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+}
+
+function toggleRecording() {
+  if (!recognition) { notify('Speech not supported — please type', 'amber'); return; }
+  if (isRecording) stopRecording();
+  else startRecording();
+}
+
+function startRecording() {
+  if (!recognition) return;
+  isRecording = true;
+  finalTranscript = document.getElementById('transcript-input').value;
+  try { recognition.start(); } catch(e) {}
+  document.getElementById('mic-btn').classList.add('recording');
+  document.getElementById('mic-hint').classList.add('recording');
+  document.getElementById('mic-hint').textContent = 'recording…';
+  document.getElementById('voice-log-box').classList.add('recording');
+  notify('Listening… speak naturally', 'green');
+}
+
+function stopRecording() {
+  isRecording = false;
+  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  document.getElementById('mic-btn').classList.remove('recording');
+  document.getElementById('mic-hint').classList.remove('recording');
+  document.getElementById('mic-hint').innerHTML = 'tap to<br>record';
+  document.getElementById('voice-log-box').classList.remove('recording');
+  const input = document.getElementById('transcript-input');
+  input.value = (finalTranscript + interimTranscript).trim();
+  interimTranscript = '';
+  onTranscriptInput();
+  if (input.value.length > 5) notify('Got it — hit "Generate & log" when ready', 'green');
+}
+
+// ─── ENTRY FORM ───────────────────────────────────────────
+function onTranscriptInput() {
+  const val = document.getElementById('transcript-input').value;
+  document.getElementById('char-count').textContent = val.length + ' chars';
+  document.getElementById('log-btn').disabled = val.trim().length < 3;
+}
+
+function togglePlanned() {
+  isPlanned = !isPlanned;
+  const t = document.getElementById('planned-toggle');
+  document.getElementById('planned-text').textContent = isPlanned ? 'Planned' : 'Unplanned';
+  t.classList.toggle('unplanned', !isPlanned);
+  t.querySelector('.toggle-dot').style.background = isPlanned ? 'var(--text3)' : 'var(--amber)';
+}
+
+function clearEntry() {
+  document.getElementById('transcript-input').value = '';
+  finalTranscript = '';
+  interimTranscript = '';
+  onTranscriptInput();
+  if (isRecording) stopRecording();
+}
+
+async function submitEntry() {
+  const what = document.getElementById('transcript-input').value.trim();
+  if (!what) return;
+  const company = document.getElementById('q-company').value.trim() || 'Yazio';
+  const date = document.getElementById('q-date').value || new Date().toISOString().split('T')[0];
+  const stakeholder = document.getElementById('q-stakeholder').value || '';
+  const planned = isPlanned;
+  const wasVoice = finalTranscript.trim().length > 0;
+
+  clearEntry();
+  if (isRecording) stopRecording();
+
+  const temp = { id: Date.now(), date, company, planned, stakeholder, what, competency:'', behaviour:'', outcome:'', summary:'', signal:'', loading:true, voice:wasVoice };
+  entries.unshift(temp);
+  render(); updateNavCounts();
+
+  const gen = await generateFields({ what, company, planned, careerLevel });
+  const idx = entries.findIndex(e => e.id === temp.id);
+  if (idx !== -1) {
+    entries[idx] = { ...temp, ...gen, loading:false };
+    saveLocal(); render(); updateCoverage(); updateNavCounts();
+    await postToSheets(entries[idx]);
+  }
+}
+
+// ─── AI GENERATION ────────────────────────────────────────
+async function generateFields({ what, company, planned, careerLevel }) {
+  const behavioursList = YAZIO.competencies.map(c =>
+    `${c.name}:\n${c.behaviours.map(b => `  - ${b}`).join('\n')}`
+  ).join('\n\n');
+
+  const prompt = `You are helping a motion designer build a career visibility tracker. Target level: ${careerLevel}.
+
+Competency framework:
+${behavioursList}
+
+Based on this work log, return ONLY valid JSON (no markdown, no explanation) with:
+- "competency": array of 1-2 competency names from the 6 above
+- "behaviour": array of 1-2 exact behaviour strings copied verbatim from the list
+- "outcome": 1 short sentence — what actually resulted (shipped / unblocked / prevented / improved / influenced)
+- "summary": 1-2 sentence polished review-ready summary. First person, impact-led, copy-pasteable into a development doc.
+- "signal": 1-2 sentences — what does this prove about this person as a ${careerLevel}? Use language from the framework.
+
+Work log: "${what}"
+Company/Team: "${company}"
+Planned: ${planned}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:600, messages:[{role:"user",content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content?.find(b => b.type==='text')?.text || '{}';
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    return {
+      competency: Array.isArray(parsed.competency) ? parsed.competency.join(' · ') : (parsed.competency||''),
+      behaviour:  Array.isArray(parsed.behaviour)  ? parsed.behaviour.join(' · ')  : (parsed.behaviour||''),
+      outcome: parsed.outcome||'', summary: parsed.summary||what, signal: parsed.signal||''
+    };
+  } catch(e) {
+    return { competency:'', behaviour:'', outcome:'', summary:what, signal:'' };
+  }
+}
+
+// ─── RENDER ───────────────────────────────────────────────
+const TAG_MAP = { 'Collaboration':'tag-collab','Communication':'tag-comms','Impact':'tag-impact','Visual Craftsmanship':'tag-craft','Craft Mastery & Innovation':'tag-mastery','Strategic Execution':'tag-strategy' };
+
+function getTag(comp) {
+  for (const k of Object.keys(TAG_MAP)) if (comp.includes(k)) return TAG_MAP[k];
+  return 'tag-collab';
+}
+
+function renderEntry(e) {
+  const comps = e.competency ? e.competency.split(' · ').filter(Boolean) : [];
+  return `<div class="entry${e.loading?' loading':''}" id="entry-${e.id}">
+    <div class="entry-header">
+      <div class="entry-badges">
+        ${e.company?`<span class="badge badge-company">${e.company}</span>`:''}
+        <span class="badge ${e.planned?'badge-planned':'badge-unplanned'}">${e.planned?'planned':'unplanned'}</span>
+        ${e.stakeholder?`<span class="badge badge-stakeholder">${e.stakeholder}</span>`:''}
+        ${e.voice?`<span class="badge badge-voice">voice</span>`:''}
+        ${comps.map(c=>`<span class="comp-tag ${getTag(c)}">${c}</span>`).join('')}
+      </div>
+      <span class="entry-date">${fmtDate(e.date)}</span>
+    </div>
+    <div class="entry-what">${e.what}</div>
+    ${e.loading?`<div class="generating-bar"><div class="generating-progress"></div></div>`:`
+    <div class="entry-generated">
+      <div class="gen-block"><div class="gen-label amber">Outcome</div><div class="gen-text">${e.outcome||'—'}</div></div>
+      <div class="gen-block"><div class="gen-label blue">Behaviour matched</div><div class="gen-text" style="font-size:11px">${e.behaviour||'—'}</div></div>
+      <div class="gen-block full"><div class="gen-label">Review-ready summary</div><div class="gen-text highlight">${e.summary||'—'}</div></div>
+      <div class="gen-block full" style="border-color:rgba(200,240,96,0.15)"><div class="gen-label accent">Career signal — ${careerLevel}</div><div class="gen-text" style="color:rgba(200,240,96,0.8)">${e.signal||'—'}</div></div>
+    </div>
+    <div class="entry-footer">
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">${e.stakeholder?e.stakeholder+' level':'no stakeholder logged'}</span>
+      <button class="del-btn" onclick="deleteEntry(${e.id})">remove</button>
+    </div>`}
+  </div>`;
+}
+
+function render() {
+  const list = document.getElementById('entries-list');
+  let filtered = activeFilter==='all' ? entries : entries.filter(e => e.competency&&e.competency.includes(activeFilter));
+  document.getElementById('results-count').textContent = filtered.filter(e=>!e.loading).length + ' entries';
+  list.innerHTML = filtered.length ? filtered.map(renderEntry).join('') : '<div class="empty">no entries yet<br>speak or type something above</div>';
+}
+
+function renderUnplanned() {
+  const list = document.getElementById('unplanned-list');
+  const f = entries.filter(e => !e.planned && !e.loading);
+  list.innerHTML = f.length ? f.map(renderEntry).join('') : '<div class="empty">no unplanned entries yet</div>';
+}
+
+function updateCoverage() {
+  const valid = entries.filter(e=>!e.loading);
+  const unplanned = valid.filter(e=>!e.planned);
+  const dirPlus = valid.filter(e=>e.stakeholder&&(e.stakeholder==='Director'||e.stakeholder==='C-level'));
+  document.getElementById('stats-grid').innerHTML = [
+    ['accent',valid.length,'total entries'],
+    ['',unplanned.length,'unplanned wins'],
+    ['',dirPlus.length,'director+ interactions'],
+    ['',YAZIO.competencies.length,'competency areas']
+  ].map(([cls,n,l])=>`<div class="stat-card"><div class="stat-num ${cls}">${n}</div><div class="stat-label">${l}</div></div>`).join('');
+
+  const barColors = ['#5DCAA5','#60a8f0','#f0b860','#c8f060','#f060a8','#a0c8f0'];
+  const counts = YAZIO.competencies.map(c => valid.filter(e=>e.competency&&e.competency.includes(c.name)).length);
+  const max = Math.max(...counts, 1);
+  document.getElementById('coverage-grid').innerHTML = YAZIO.competencies.map((c,i)=>`
+    <div class="coverage-card">
+      <div class="coverage-name">${c.name}</div>
+      <div class="coverage-bar-wrap"><div class="coverage-bar" style="width:${Math.round(counts[i]/max*100)}%;background:${barColors[i]}"></div></div>
+      <div class="coverage-count">${counts[i]} entr${counts[i]===1?'y':'ies'}</div>
+    </div>`).join('');
+
+  document.getElementById('gap-warnings').innerHTML = YAZIO.competencies
+    .filter((c,i)=>counts[i]===0)
+    .map(c=>`<div class="gap-warning"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;margin-top:1px"><path d="M8 2L14 13H2L8 2z"/><line x1="8" y1="7" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".5" fill="currentColor"/></svg><span><strong>${c.name}</strong> — no entries yet. Example: "${c.behaviours[0]}"</span></div>`)
+    .join('');
+}
+
+function updateNavCounts() {
+  document.getElementById('nav-all').textContent = entries.filter(e=>!e.loading).length;
+  document.getElementById('nav-unplanned').textContent = entries.filter(e=>!e.planned&&!e.loading).length;
+}
+
+function setFilter(val, el) {
+  activeFilter = val;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e=>e.id!==id);
+  saveLocal(); render(); renderUnplanned(); updateCoverage(); updateNavCounts();
+}
+
+function showPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('page-title').textContent = {log:'Work log',unplanned:'Unplanned wins',coverage:'Coverage',settings:'Settings'}[name]||name;
+  if(name==='unplanned') renderUnplanned();
+  if(name==='coverage') updateCoverage();
+}
+
+function fmtDate(d) {
+  if(!d) return '';
+  try { return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+  catch { return d; }
+}
+
+// ─── SHEETS ───────────────────────────────────────────────
+function connectSheets() {
+  const url = document.getElementById('sheets-url').value.trim();
+  if(!url){notify('Paste your Apps Script URL first','amber');return;}
+  sheetsUrl = url;
+  try{localStorage.setItem('career_tracker_sheets_url',url);}catch(e){}
+  updateSheetsStatus(true); notify('Connected to Google Sheets','green');
+}
+
+function updateSheetsStatus(connected) {
+  document.getElementById('sheets-dot').className = 'sheets-dot'+(connected?' connected':'');
+  document.getElementById('sheets-status-text').textContent = connected?'Sheets: connected':'Sheets: not connected';
+}
+
+async function testSheets() {
+  if(!sheetsUrl){notify('No URL configured','amber');return;}
+  try{await fetch(sheetsUrl+'?t='+Date.now());notify('Connection OK','green');}
+  catch(e){notify('Connection failed — check URL','amber');}
+}
+
+async function loadFromSheets() {
+  if(!sheetsUrl){notify('Connect Sheets in Settings first','amber');return;}
+  try {
+    const res = await fetch(sheetsUrl+'?t='+Date.now());
+    const data = await res.json();
+    if(data.rows&&data.rows.length){
+      const existing = new Set(entries.map(e=>e.date+e.what));
+      const newRows = data.rows.filter(r=>!existing.has(r.date+r.what)).map((r,i)=>({
+        id:Date.now()+i, date:r.date, company:r.company, planned:r.planned==='Yes'||r.planned===true,
+        stakeholder:r.stakeholder, what:r.what, competency:r.competency, behaviour:r.behaviour,
+        outcome:r.outcome, summary:r.summary, signal:r.signal, loading:false
+      }));
+      entries=[...newRows,...entries];
+      saveLocal(); render(); updateCoverage(); updateNavCounts();
+      notify(`Synced ${newRows.length} new entr${newRows.length===1?'y':'ies'}`,'green');
+    } else { notify('Sheets is empty','amber'); }
+  } catch(e){ notify('Sync failed','amber'); }
+}
+
+async function postToSheets(e) {
+  if(!sheetsUrl) return;
+  try {
+    await fetch(sheetsUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      date:e.date,company:e.company,planned:e.planned?'Yes':'No',stakeholder:e.stakeholder||'',
+      what:e.what,competency:e.competency||'',behaviour:e.behaviour||'',outcome:e.outcome||'',
+      summary:e.summary||'',signal:e.signal||''
+    })});
+    notify('Saved to Sheets','green');
+  } catch(err){ notify('Saved locally — Sheets sync failed','amber'); }
+}
+
+// ─── EXPORT ───────────────────────────────────────────────
+function exportCSV() {
+  const valid = entries.filter(e=>!e.loading);
+  if(!valid.length){notify('No entries to export','amber');return;}
+  const rows=[['Date','Company/Team/Project','Planned?','Stakeholder','What happened (raw)','Competency area','Specific behaviour matched','Outcome','Review-ready summary','Career signal'],
+    ...valid.map(e=>[e.date,e.company,e.planned?'Yes':'No',e.stakeholder||'',e.what,e.competency||'',e.behaviour||'',e.outcome||'',e.summary||'',e.signal||''])];
+  const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='career-tracker-'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  notify('CSV exported','green');
+}
+
+function copyReviewDoc() {
+  const valid = entries.filter(e=>!e.loading&&e.summary);
+  if(!valid.length){notify('No entries to copy','amber');return;}
+  const grouped = {};
+  YAZIO.competencies.forEach(c=>{grouped[c.name]=[];});
+  valid.forEach(e=>{
+    if(e.competency) e.competency.split(' · ').forEach(c=>{if(grouped[c])grouped[c].push(e);});
+  });
+  let doc=`DEVELOPMENT REVIEW — ${new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'})}\n\n`;
+  Object.entries(grouped).forEach(([name,items])=>{
+    if(items.length){doc+=`${name.toUpperCase()}\n${'—'.repeat(name.length)}\n`;items.forEach(e=>{doc+=`• ${e.summary}\n`;});doc+='\n';}
+  });
+  const unp=valid.filter(e=>!e.planned);
+  if(unp.length){doc+=`BEYOND MY DEFINED SCOPE (Unplanned)\n${'—'.repeat(35)}\n`;unp.forEach(e=>{doc+=`• ${e.summary}\n`;});}
+  navigator.clipboard.writeText(doc).then(()=>notify('Review doc copied','green'));
+}
+
+function copyScript(){navigator.clipboard.writeText(APPS_SCRIPT).then(()=>notify('Script copied','green'));}
+function saveSettings(){careerLevel=document.getElementById('career-level').value;try{localStorage.setItem('career_tracker_level',careerLevel);}catch(e){}}
+function saveLocal(){try{localStorage.setItem('career_tracker_entries',JSON.stringify(entries));}catch(e){}}
+
+let notifTimer;
+function notify(msg,type='green'){
+  const el=document.getElementById('notif');
+  document.getElementById('notif-text').textContent=msg;
+  document.getElementById('notif-dot').className='notif-dot '+type;
+  el.classList.add('show');clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+function init() {
+  try{
+    const saved=localStorage.getItem('career_tracker_entries');
+    if(saved) entries=JSON.parse(saved);
+    sheetsUrl=localStorage.getItem('career_tracker_sheets_url')||'';
+    careerLevel=localStorage.getItem('career_tracker_level')||'Senior Motion Designer';
+  }catch(e){}
+
+  document.getElementById('q-date').value=new Date().toISOString().split('T')[0];
+  if(sheetsUrl){document.getElementById('sheets-url').value=sheetsUrl;updateSheetsStatus(true);}
+
+  const sel=document.getElementById('career-level');
+  for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===careerLevel){sel.selectedIndex=i;break;}}
+
+  initSpeech();
+  render(); updateCoverage(); updateNavCounts();
+}
+
+init();
+</script>
+</body>
+</html>
