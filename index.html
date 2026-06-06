@@ -733,8 +733,8 @@ async function postToSheets(e) {
     });
     await fetch(sheetsUrl, {
       method:'POST',
-      mode:'no-cors',
-      headers:{'Content-Type':'text/plain'},
+      
+      headers:{'Content-Type':'application/json'},
       body: payload
     });
     notify('Saved to Sheets','green');
